@@ -9,6 +9,7 @@ m17n-commands	m17n.txt	/*m17n-commands*
 m17n-contents	m17n.txt	/*m17n-contents*
 m17n-how-it-works	m17n.txt	/*m17n-how-it-works*
 m17n-introduction	m17n.txt	/*m17n-introduction*
+m17n-limitations	m17n.txt	/*m17n-limitations*
 m17n-lua-api	m17n.txt	/*m17n-lua-api*
 m17n-options	m17n.txt	/*m17n-options*
 m17n-setup	m17n.txt	/*m17n-setup*

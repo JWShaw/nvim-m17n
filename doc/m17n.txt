@@ -10,6 +10,7 @@ CONTENTS                                                    *m17n-contents*
   4. Lua API ..................... |m17n-lua-api|
   5. Options ..................... |m17n-options|
   6. How it works ................ |m17n-how-it-works|
+  7. Limitations ................. |m17n-limitations|
 
 ==============================================================================
 1. INTRODUCTION                                        *m17n-introduction*
@@ -117,6 +118,23 @@ logical on/off state itself and only sets 'iminsert' to 1 during Insert mode:
 |InsertEnter| restores it and |InsertLeave| stores the current value (so the
 built-in |i_CTRL-^| toggle still works) before resetting it to 0.  'imsearch'
 is kept at 0 unless the `search` option is set.
+
+==============================================================================
+7. LIMITATIONS                                          *m17n-limitations*
+
+Only static transliteration `.mim` files are supported: a single `(map ...)`
+mapping key sequences to plain output, driven by a lone
+`(state (init (map)))`.
+
+Stateful input methods are NOT supported.  They use multiple states,
+variables, candidate lists and commands such as `select`, `shift`, `set`,
+`delete`, `move`, `undo`, `cond` and `include`, which cannot be expressed as
+static key-to-output mappings.  Examples include the Chinese methods
+(`zh-pinyin`, `zh-zhuyin`, `zh-cangjie`, ...), most Indic methods
+(`hi-*`, `bn-*`, `gu-*`, `kn-*`, `ml-*`, `te-*`, `ta-*`, `si-*`, ...), the
+Vietnamese methods (`vi-telex`, `vi-vni`, `vi-viqr`, ...), Tibetan `bo-*`,
+Thai `th-*` and Japanese `ja-anthy`.  For those, use a full input-method
+framework such as fcitx5 or ibus, which run the real m17n engine.
 
 ==============================================================================
 vim:tw=78:ts=8:noet:ft=help:norl:
