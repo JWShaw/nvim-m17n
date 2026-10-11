@@ -1,0 +1,16 @@
+:M17nDisable	m17n.txt	/*:M17nDisable*
+:M17nEnable	m17n.txt	/*:M17nEnable*
+:M17nReload	m17n.txt	/*:M17nReload*
+:M17nSetMim	m17n.txt	/*:M17nSetMim*
+:M17nStatus	m17n.txt	/*:M17nStatus*
+:M17nToggle	m17n.txt	/*:M17nToggle*
+m17n	m17n.txt	/*m17n*
+m17n-commands	m17n.txt	/*m17n-commands*
+m17n-contents	m17n.txt	/*m17n-contents*
+m17n-how-it-works	m17n.txt	/*m17n-how-it-works*
+m17n-introduction	m17n.txt	/*m17n-introduction*
+m17n-lua-api	m17n.txt	/*m17n-lua-api*
+m17n-options	m17n.txt	/*m17n-options*
+m17n-setup	m17n.txt	/*m17n-setup*
+m17n.txt	m17n.txt	/*m17n.txt*
+nvim-m17n	m17n.txt	/*nvim-m17n*

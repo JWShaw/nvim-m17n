@@ -1,0 +1,122 @@
+*m17n.txt*   Toggle an m17n (.mim) input method in Insert mode.    *nvim-m17n*
+*m17n*
+
+==============================================================================
+CONTENTS                                                    *m17n-contents*
+
+  1. Introduction ................ |m17n-introduction|
+  2. Setup ....................... |m17n-setup|
+  3. Commands .................... |m17n-commands|
+  4. Lua API ..................... |m17n-lua-api|
+  5. Options ..................... |m17n-options|
+  6. How it works ................ |m17n-how-it-works|
+
+==============================================================================
+1. INTRODUCTION                                        *m17n-introduction*
+
+nvim-m17n lets you type transliterated Latin and have it converted to another
+script (Cyrillic by default) according to an m17n `.mim` input method file.
+The conversion happens in Insert mode only; every other mode is unaffected. >
+
+    privet    -> привет
+    shchuka   -> щука
+    yolka     -> ёлка
+<
+The input method is enabled per buffer and can be toggled at any time.
+
+==============================================================================
+2. SETUP                                                      *m17n-setup*
+
+Put this plugin on 'runtimepath' and optionally call: >
+
+    require("m17n").setup({
+      mim = "ru-translit",
+    })
+<
+Calling `setup()` is optional; the defaults are used otherwise.  The bundled
+input method is `mim/ru-translit.mim`.
+
+==============================================================================
+3. COMMANDS                                                *m17n-commands*
+
+:M17nToggle                                            *:M17nToggle*
+        Toggle the input method for the current buffer.
+
+:M17nEnable                                            *:M17nEnable*
+        Turn the input method on for the current buffer.
+
+:M17nDisable                                          *:M17nDisable*
+        Turn the input method off for the current buffer.
+
+:M17nStatus                                            *:M17nStatus*
+        Print whether the input method is on.
+
+:M17nReload                                            *:M17nReload*
+        Re-read the configured `.mim` file and reinstall mappings.
+
+:M17nSetMim {name-or-path}                            *:M17nSetMim*
+        Use another `.mim` file.  `{name-or-path}` is either the name of a
+        file in `mim/` on 'runtimepath' (without the `.mim` extension) or a
+        path to a `.mim` file.
+
+In Insert mode you can also use the built-in |i_CTRL-^| to toggle the input
+method, and |c_CTRL-^| in the command line.
+
+==============================================================================
+4. LUA API                                                *m17n-lua-api*
+
+>lua
+    local m17n = require("m17n")
+
+    m17n.toggle([buf])   -- toggle; returns true when now enabled
+    m17n.enable([buf])   -- enable for buffer (default: current)
+    m17n.disable([buf])  -- disable for buffer (default: current)
+    m17n.status([buf])   -- true when enabled
+    m17n.reload()        -- re-read the .mim file
+<
+==============================================================================
+5. OPTIONS                                                *m17n-options*
+
+Configure with `require("m17n").setup({...})`.  Defaults: >
+
+    {
+      mim = "ru-translit",
+      search = false,
+      default_on = false,
+      toggle_keymap = nil,
+    }
+<
+`mim`~
+        Name of a `mim/<name>.mim` file on 'runtimepath', or a path to any
+        `.mim` file.
+
+`search`~
+        When false (default), 'imsearch' is set to 0 while enabled, so
+        searching with `/` stays literal.  When true, search patterns are
+        translated too.
+
+`default_on`~
+        When true, enable the input method automatically in every buffer.
+
+`toggle_keymap`~
+        Optional Insert-mode mapping that toggles the input method, e.g.
+        `"<C-^>"`.  Default is nil because Neovim's built-in |i_CTRL-^|
+        already toggles it.
+
+==============================================================================
+6. HOW IT WORKS                                        *m17n-how-it-works*
+
+Language mappings (|:lmap|) are Neovim's built-in multi-key input engine: they
+support multi-character sequences and "dead key" prefixes where Neovim waits
+for the next key before deciding.  This plugin parses the `.mim` file into
+buffer-local `:lmap` mappings and enables them via the 'iminsert' option.
+
+`'iminsert'` is also used by single-character Normal-mode commands such as `r`
+and `f`, and by search.  To leave other modes untouched, the plugin keeps the
+logical on/off state itself and only sets 'iminsert' to 1 during Insert mode:
+|InsertEnter| restores it and |InsertLeave| stores the current value (so the
+built-in |i_CTRL-^| toggle still works) before resetting it to 0.  'imsearch'
+is kept at 0 unless the `search` option is set.
+
+==============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:
