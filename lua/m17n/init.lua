@@ -1,22 +1,15 @@
 -- nvim-m17n: toggle an m17n (.mim) input method in Insert mode.
 --
 -- The heavy lifting is done by Neovim's built-in language mappings (:lmap),
--- which are consulted only when the buffer-local 'iminsert' option is 1.
--- Language mappings support multi-key sequences and the "dead key" behaviour
--- (waiting for the next key when the current sequence could still be extended),
--- which is exactly what transliteration style m17n input methods need.
+-- which are enabled per-buffer with the 'iminsert' option.  Language mappings
+-- support multi-key sequences and the "dead key" behaviour (waiting for the
+-- next key when the current sequence could still be extended), which is exactly
+-- what transliteration style m17n input methods need.
 --
--- 'iminsert' is also honoured by single-character Normal-mode commands such as
--- "r" and "f".  To keep every non-Insert mode behaving normally, this plugin
--- keeps the logical on/off state in Lua and only turns 'iminsert' on while
--- actually inside Insert mode:
---
---   InsertEnter -> restore 'iminsert' from the logical state
---   InsertLeave -> remember the real 'iminsert' (so built-in <C-^> works)
---                  and reset it to 0
---
--- Searching also honours language mappings, but through 'imsearch'; by default
--- the plugin keeps 'imsearch' at 0 so "/" searches stay literal.
+-- 'iminsert' is simply set to 1 while the input method is on and 0 while it is
+-- off.  Note that Neovim also consults 'iminsert' for the character arguments
+-- of single-character Normal-mode commands such as "r" and "f", and for search
+-- via 'imsearch'.  That is the same behaviour as Vim's built-in keymaps.
 
 local mim = require("m17n.mim")
 
@@ -30,7 +23,7 @@ local M = {}
 
 M.config = {
   mim = "ru-translit",
-  search = false,
+  search = true,
   default_on = false,
   toggle_keymap = nil,
 }
@@ -38,10 +31,8 @@ M.config = {
 local state = {
   entries = nil, -- parsed keymap entries, or false when loading failed
   applied = {}, -- bufnr -> true once language mappings have been installed
-  enabled = {}, -- bufnr -> logical on/off state (nil = never used)
 }
 
-local core_group = vim.api.nvim_create_augroup("m17n", { clear = true })
 local setup_group = vim.api.nvim_create_augroup("m17n_setup", { clear = true })
 
 local function notify(msg, level)
@@ -53,10 +44,6 @@ local function norm(buf)
     return vim.api.nvim_get_current_buf()
   end
   return buf
-end
-
-local function in_insert_mode()
-  return vim.fn.mode():sub(1, 1) == "i"
 end
 
 --- Resolve `M.config.mim` to a readable file path.
@@ -132,13 +119,8 @@ function M.enable(buf)
   if not vim.api.nvim_buf_is_valid(buf) then return false end
   if not apply_to_buffer(buf) then return false end
 
-  state.enabled[buf] = true
+  vim.bo[buf].iminsert = 1
   vim.bo[buf].imsearch = M.config.search and -1 or 0
-  -- Only turn 'iminsert' on inside Insert mode; elsewhere it stays 0 so that
-  -- "r", "f" and friends behave normally (see InsertEnter autocommand).
-  if in_insert_mode() and vim.api.nvim_get_current_buf() == buf then
-    vim.bo[buf].iminsert = 1
-  end
   return true
 end
 
@@ -146,28 +128,24 @@ end
 function M.disable(buf)
   buf = norm(buf)
   if not vim.api.nvim_buf_is_valid(buf) then return false end
-
-  state.enabled[buf] = false
-  if in_insert_mode() and vim.api.nvim_get_current_buf() == buf then
-    vim.bo[buf].iminsert = 0
-  end
+  vim.bo[buf].iminsert = 0
   return true
 end
 
 --- Toggle the input method.  Returns true when it is now enabled.
 function M.toggle(buf)
   buf = norm(buf)
-  if state.enabled[buf] == true then
+  if vim.bo[buf].iminsert == 1 then
     M.disable(buf)
     return false
   end
   M.enable(buf)
-  return state.enabled[buf] == true
+  return vim.bo[buf].iminsert == 1
 end
 
---- Whether the input method is logically active for a buffer.
+--- Whether the input method is currently active for a buffer.
 function M.status(buf)
-  return state.enabled[norm(buf)] == true
+  return vim.bo[norm(buf)].iminsert == 1
 end
 
 --- Re-read the .mim file and reinstall mappings on buffers already using it.
@@ -181,31 +159,6 @@ function M.reload()
     end
   end
 end
-
--- Restore 'iminsert' when entering Insert mode; reset it when leaving so that
--- other modes never use language mappings.
-vim.api.nvim_create_autocmd("InsertEnter", {
-  group = core_group,
-  callback = function(args)
-    local buf = args.buf
-    if state.enabled[buf] ~= nil then
-      vim.bo[buf].iminsert = state.enabled[buf] and 1 or 0
-    end
-  end,
-})
-
-vim.api.nvim_create_autocmd("InsertLeave", {
-  group = core_group,
-  callback = function(args)
-    local buf = args.buf
-    if state.applied[buf] then
-      -- Capture a change made with the built-in <C-^> toggle, then disable it
-      -- outside Insert mode.
-      state.enabled[buf] = vim.bo[buf].iminsert == 1
-      vim.bo[buf].iminsert = 0
-    end
-  end,
-})
 
 --- Configure the plugin.  Call once from your config.
 function M.setup(opts)

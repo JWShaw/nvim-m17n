@@ -17,7 +17,10 @@ CONTENTS                                                    *m17n-contents*
 
 nvim-m17n lets you type transliterated Latin and have it converted to another
 script (Cyrillic by default) according to an m17n `.mim` input method file.
-The conversion happens in Insert mode only; every other mode is unaffected. >
+The conversion happens while you type.  Motion and editing commands are
+unaffected, although — as with Vim's built-in keymaps — the character
+arguments of commands such as `r` and `f` go through the input method while it
+is on. >
 
     privet    -> привет
     shchuka   -> щука
@@ -82,7 +85,7 @@ Configure with `require("m17n").setup({...})`.  Defaults: >
 
     {
       mim = "ru-translit",
-      search = false,
+      search = true,
       default_on = false,
       toggle_keymap = nil,
     }
@@ -92,9 +95,9 @@ Configure with `require("m17n").setup({...})`.  Defaults: >
         `.mim` file.
 
 `search`~
-        When false (default), 'imsearch' is set to 0 while enabled, so
-        searching with `/` stays literal.  When true, search patterns are
-        translated too.
+        When true (default), search patterns are translated too: 'imsearch' is
+        set to -1 (follow 'iminsert').  Set to false to keep typing `/`
+        searches literal by setting 'imsearch' to 0.
 
 `default_on`~
         When true, enable the input method automatically in every buffer.
@@ -112,12 +115,11 @@ support multi-character sequences and "dead key" prefixes where Neovim waits
 for the next key before deciding.  This plugin parses the `.mim` file into
 buffer-local `:lmap` mappings and enables them via the 'iminsert' option.
 
-`'iminsert'` is also used by single-character Normal-mode commands such as `r`
-and `f`, and by search.  To leave other modes untouched, the plugin keeps the
-logical on/off state itself and only sets 'iminsert' to 1 during Insert mode:
-|InsertEnter| restores it and |InsertLeave| stores the current value (so the
-built-in |i_CTRL-^| toggle still works) before resetting it to 0.  'imsearch'
-is kept at 0 unless the `search` option is set.
+`'iminsert'` is also used by the character arguments of single-character
+Normal-mode commands such as `r` and `f`, and by search (through 'imsearch').
+Those therefore use the input method too while it is on — the same behaviour as
+Vim's built-in keymaps.  Search follows the input method by default; set the
+`search` option to false to keep it literal.
 
 ==============================================================================
 7. LIMITATIONS                                          *m17n-limitations*

@@ -1,8 +1,8 @@
 # nvim-m17n
 
-Toggle an [m17n](https://www.nongnu.org/m17n/) `.mim` input method in Neovim's
-Insert mode.  Type transliterated Latin and get Cyrillic (or whatever the
-`.mim` file defines) as you go — and only in Insert mode.
+Toggle an [m17n](https://www.nongnu.org/m17n/) `.mim` input method in Neovim.
+Type transliterated Latin and get Cyrillic (or whatever the `.mim` file
+defines) as you go.
 
 ```
 privet   -> привет
@@ -10,8 +10,10 @@ shchuka  -> щука
 yolka    -> ёлка
 ```
 
-Normal, Visual, Operator-pending, Terminal and Command-line modes are left
-exactly as they were.
+The input method is active while you type.  Motion and editing commands in
+Normal, Visual and Operator-pending modes are unaffected, though — as with
+Vim's built-in keymaps — the character arguments of commands such as `r` and
+`f` do go through the input method while it is on.
 
 ## Motivation
 
@@ -24,12 +26,13 @@ few insertions that need it is easy to forget and easy to get wrong.
 
 This plugin takes the opposite approach: instead of fighting a native input
 method, it implements the input method *inside* Neovim using its built-in
-language mappings.  That keeps everything Vim-native and self-contained — the
-input method only exists in Insert mode, leaves every other mode untouched, and
-needs no OS integration, background daemon or session-wide toggle.  It's also
-deliberately small and dependency-free, which is enough for transliteration
-methods even though full-featured IMEs (with candidate windows) are still the
-right tool for stateful scripts — see [Unsupported: stateful input
+language mappings.  That keeps everything Vim-native and self-contained — there
+is no global key interception and no competing state, just Neovim's own
+language mappings, and no OS integration, background daemon or session-wide
+toggle is needed.  It's also deliberately small and dependency-free, which is
+enough for transliteration methods even though full-featured IMEs (with
+candidate windows) are still the right tool for stateful scripts — see
+[Unsupported: stateful input
 methods](#unsupported-stateful-input-methods).
 
 ## How it works
@@ -46,12 +49,11 @@ supports:
 This plugin parses the `.mim` file into `lmap` mappings and flips `'iminsert'`
 on and off, so all the hard work is done by Neovim itself.
 
-`'iminsert'` is *also* honoured by single-character Normal-mode commands such as
-`r` and `f`.  To keep those modes normal, the plugin remembers the on/off state
-in Lua and only sets `'iminsert'=1` while you are actually inside Insert mode:
-`InsertEnter` restores it, and `InsertLeave` records the real value (so Neovim's
-built-in `CTRL-^` toggle keeps working) and resets it to `0`.  When you enter
-Insert mode again, your last choice is restored.
+Because `'iminsert'` is also consulted for the character arguments of
+single-character Normal-mode commands (`r`, `f`) and, via `'imsearch'`, for
+search patterns, those use the input method too while it is on — the same
+behaviour as Vim's built-in keymaps.  Search follows the input method by
+default; set `search = false` to keep `/` searches literal.
 
 ## Requirements
 
@@ -130,7 +132,7 @@ Defaults:
 ```lua
 require("m17n").setup({
   mim = "ru-translit",   -- bundled name, or a path to any .mim file
-  search = false,        -- true: also translate search patterns ('imsearch')
+  search = true,         -- false: keep `/` search literal ('imsearch' = 0)
   default_on = false,    -- true: enable automatically in every buffer
   toggle_keymap = nil,   -- e.g. "<C-^>" to add an Insert-mode toggle mapping
 })
@@ -138,9 +140,9 @@ require("m17n").setup({
 
 * **`mim`** — either the name of a file in `mim/` on `'runtimepath'`
   (`"ru-translit"`), or a path to a `.mim` file (`"~/.m17n/foo.mim"`).
-* **`search`** — when `false` (default), `'imsearch'` is set to `0` while
-  enabled so typing a `/` search stays literal.  When `true`, search patterns
-  are translated as well.
+* **`search`** — when `true` (default), search patterns are translated as well,
+  by setting `'imsearch'` to `-1` (follow `'iminsert'`).  Set it to `false` to
+  keep typing `/` searches literal by setting `'imsearch'` to `0`.
 
 ## Bundled input method
 
