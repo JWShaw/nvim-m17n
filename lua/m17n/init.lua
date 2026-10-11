@@ -98,8 +98,11 @@ local function apply_to_buffer(buf)
 
   local failed = 0
   for _, entry in ipairs(entries) do
+    -- NOTE: do *not* pass `silent = true` here.  A silent language mapping
+    -- suppresses the command-line redraw, so mapped characters typed while
+    -- searching (/) are not shown until the next unmapped key.
     local ok = pcall(vim.api.nvim_buf_set_keymap, buf, "l", escape_lhs(entry.lhs), entry.rhs,
-      { noremap = true, silent = true })
+      { noremap = true })
     if not ok then
       failed = failed + 1
     end
